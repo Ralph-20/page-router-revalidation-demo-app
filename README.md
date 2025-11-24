@@ -1,40 +1,103 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/pages/api-reference/create-next-app).
+# Pages Router App - ISR with On-Demand Revalidation
 
-## Getting Started
+Next.js 15 Pages Router app demonstrating Incremental Static Regeneration (ISR) with manual revalidation. Simulates a production app (e.g., Sitecore-powered) that needs cache control.
 
-First, run the development server:
+## Quick Start
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.local.example .env.local
+# Edit .env.local: Set REVALIDATE_SECRET=your-secret-token
+npm run build
+npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+**Important**: ISR only works in production mode. Must build before starting.
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+## What's Inside
 
-[API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+- **`/demo-page-1`** - ISR page with random color, number, timestamp
+- **`/demo-page-2`** - ISR page with random color, number, timestamp  
+- **`/api/revalidate`** - POST endpoint for manual cache invalidation
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) instead of React pages.
+## Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/pages/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Required in `.env.local`:
+```
+REVALIDATE_SECRET=your-secure-token-here
+```
 
-## Learn More
+## API Usage
 
-To learn more about Next.js, take a look at the following resources:
+### POST `/api/revalidate`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn-pages-router) - an interactive Next.js tutorial.
+```bash
+curl -X POST https://your-app.vercel.app/api/revalidate \
+  -H "Content-Type: application/json" \
+  -d '{"path": "/demo-page-1", "secret": "your-secret-token"}'
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**Request**:
+```json
+{
+  "path": "/demo-page-1",
+  "secret": "your-secret-token"
+}
+```
 
-## Deploy on Vercel
+**Response** (200):
+```json
+{
+  "revalidated": true,
+  "path": "/demo-page-1"
+}
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+**Errors**: `401` Invalid secret | `400` Missing path | `405` Wrong method | `500` Revalidation failed
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/pages/building-your-application/deploying) for more details.
+## How It Works
+
+Pages use `getStaticProps` with `revalidate: false` - no automatic regeneration. Content only updates when you call the revalidation API, giving complete control over when pages refresh.
+
+## Testing Revalidation
+
+**Option 1: With Revalidation Interface**  
+Use the companion [Revalidation Interface](https://github.com/your-org/revalidation-interface) - a web UI for triggering revalidation.
+
+**Option 2: Manual cURL**  
+Use the curl command above.
+
+**Verify**: Visit a demo page, note the data, trigger revalidation, refresh - data should change.
+
+## Deploy to Vercel
+
+1. Push to GitHub
+2. Import to Vercel
+3. Set environment variable: `REVALIDATE_SECRET=your-production-secret`
+4. Deploy
+5. Use your deployed URL in the Revalidation Interface: `https://your-app.vercel.app/api/revalidate`
+
+## Development vs Production
+
+- Development: `npm run dev` (no ISR - hot reload only)
+- Production: `npm run build && npm start` (ISR enabled)
+
+## Troubleshooting
+
+**"Cannot read 'revalidate'"**: Running in dev mode. Must use `npm run build && npm start`.
+
+**"Invalid secret"**: Token doesn't match `.env.local`. Check for typos/spaces.
+
+**Page doesn't update**: Hard refresh browser (Cmd/Ctrl + Shift + R) or clear cache.
+
+**CORS errors**: Normal in local development. Add CORS headers to API if needed (already included).
+
+## Real-World Use
+
+This pattern works for any CMS triggering Next.js revalidation:
+- Sitecore PowerShell scripts
+- Contentful webhooks  
+- Custom admin interfaces
+- CI/CD pipelines
+
+The [Revalidation Interface](https://github.com/your-org/revalidation-interface) provides a user-friendly alternative to command-line tools.
