@@ -27,6 +27,14 @@ Required in `.env.local`:
 REVALIDATE_SECRET=your-secure-token-here
 ```
 
+Optional:
+```
+# Allowed origin for CORS requests to the revalidation API
+# Only requests from this origin will be accepted for cross-origin revalidation
+# Defaults to https://revalidation-interface-demo.vercel.app if not set
+ALLOWED_REVALIDATION_ORIGIN=https://revalidation-interface-demo.vercel.app
+```
+
 ## API Usage
 
 ### POST `/api/revalidate`
@@ -73,7 +81,9 @@ Use the curl command above.
 
 1. Push to GitHub
 2. Import to Vercel
-3. Set environment variable: `REVALIDATE_SECRET=your-production-secret`
+3. Set environment variables:
+   - `REVALIDATE_SECRET=your-production-secret` (required)
+   - `ALLOWED_REVALIDATION_ORIGIN=https://your-revalidation-interface.vercel.app` (optional, defaults to `https://revalidation-interface-demo.vercel.app`)
 4. Deploy
 5. Use your deployed URL in the Revalidation Interface: `https://your-app.vercel.app/api/revalidate`
 
@@ -90,7 +100,7 @@ Use the curl command above.
 
 **Page doesn't update**: Hard refresh browser (Cmd/Ctrl + Shift + R) or clear cache.
 
-**CORS errors**: Normal in local development. Add CORS headers to API if needed (already included).
+**CORS errors**: The API endpoint uses origin allowlisting for security. When calling from a cross-origin application (like the Revalidation Interface), ensure the `ALLOWED_REVALIDATION_ORIGIN` environment variable matches the origin of the calling application. Requests from unauthorized origins will be rejected with a 403 error.
 
 ## Real-World Use
 

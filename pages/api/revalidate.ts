@@ -15,10 +15,27 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<RevalidateResponse>
 ) {
-  // Enable CORS for cross-origin requests
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  // Get allowed origin from environment variable or use default
+  const allowedOrigin = process.env.ALLOWED_REVALIDATION_ORIGIN || 'https://revalidation-interface-demo.vercel.app';
+  const requestOrigin = req.headers.origin;
+
+  // Set CORS headers at the very start, before any method checks
+  // Only set CORS headers for cross-origin requests
+  if (requestOrigin) {
+    // Validate origin for cross-origin requests
+    if (requestOrigin !== allowedOrigin) {
+      return res.status(403).json({ 
+        revalidated: false, 
+        error: 'Origin not allowed' 
+      });
+    }
+    
+    // Set CORS headers for allowed origin
+    res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  }
+  // Same-origin requests (no origin header) are allowed without CORS headers
 
   // Handle preflight OPTIONS request
   if (req.method === 'OPTIONS') {
