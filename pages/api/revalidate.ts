@@ -3,6 +3,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 interface RevalidateRequest {
   path?: string;
   secret?: string;
+  // siteName?: string; // Optional site name for multisite paths
 }
 
 interface RevalidateResponse {
